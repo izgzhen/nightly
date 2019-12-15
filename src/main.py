@@ -4,6 +4,8 @@ import pymysql
 import glob
 import sys
 
+from msbase.logging import logger
+
 jobs_config = yaml.safe_load(open("config/jobs.yaml", "r"))
 resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
 
@@ -20,7 +22,11 @@ if len(sys.argv) > 1:
             cur.execute(query)
         sys.exit(0)
 
+def total_log_count():
+    cur = db.cursor()
+    cur.execute("SELECT COUNT(*) FROM log")
+    return cur.fetchone()[0]
+
 while True:
-    print("Check")
-    db.ping()
+    logger.info("Total log: %s" % total_log_count())
     time.sleep(1)

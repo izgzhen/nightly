@@ -1,2 +1,3 @@
 PyYAML==5.2
 PyMySQL==0.9.3
+msbase==0.1.7
