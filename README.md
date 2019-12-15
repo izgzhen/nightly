@@ -28,3 +28,9 @@ Inside `config` folder, ignored by git
 ```
 python src/main.py
 ```
+
+## Initialize database
+
+```
+python src/main.py --init
+```
