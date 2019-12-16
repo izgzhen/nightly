@@ -2,6 +2,7 @@ import sys
 import json
 import os
 import subprocess
+import datetime
 
 task = json.load(open("task.json", "r"))
 
@@ -23,5 +24,6 @@ for s in task["steps"]:
 open(str(task["task_id"]) + ".json", "w").write(json.dumps({
     "stdout": stdout,
     "stderr": stderr,
+    "finished_timestamp": datetime.datetime.timestamp(datetime.datetime.now()),
     "status": status
 }))

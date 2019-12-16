@@ -190,9 +190,9 @@ def fetch_running_jobs():
     cur.execute("SELECT * FROM log WHERE job_status = 'running'")
     return cur.fetchall()
 
-def update_job_status(job_id, status):
+def update_job_status(job_id, status, finished):
     cur = db.cursor()
-    cur.execute("UPDATE log SET job_status = %s WHERE log_id = %s", (status, job_id))
+    cur.execute("UPDATE log SET job_status = %s, job_finished = %s WHERE log_id = %s", (status, finished, job_id))
     cur.close()
 
 def persist(compute, storage, log_id: str, persisted_item: str, renamed: str = None):
@@ -219,7 +219,7 @@ def process_running_jobs():
             output_json = log_id + ".json"
             scp(compute, ".", renamed=output_json, to_remote=False)
             output = json.loads(open(output_json, "r").read())
-            update_job_status(log_id, output["status"])
+            update_job_status(log_id, output["status"], datetime.date.fromtimestamp(output["finished_timestamp"]))
             os.system("rm " + output_json)
             # collect persisted
             for persisted_item in persisted:
