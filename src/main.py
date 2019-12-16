@@ -158,6 +158,12 @@ def fetch_running_jobs():
     cur.execute("SELECT * FROM log WHERE job_status = 'running'")
     return cur.fetchall()
 
+def update_job_output(job_id, output):
+    cur = db.cursor()
+    cur.execute("UPDATE log SET stderr = %s, stdout = %s, job_status = %s" +
+                "WHERE log_id = %s", (json.dumps(output["stderr"]), json.dumps(output["stdout"]), output["status"], job_id))
+    cur.close()
+
 def process_running_jobs():
     running_jobs = fetch_running_jobs()
     for job in running_jobs:
@@ -167,7 +173,10 @@ def process_running_jobs():
         if str(job["pid"]) not in ret:
             output_json = str(job["log_id"]) + ".json"
             scp(compute, ".", renamed=output_json, to_remote=False)
-            print(json.loads(open(output_json, "r").read()))
+            output = json.loads(open(output_json, "r").read())
+            update_job_output(job["log_id"], output)
+            os.system("rm " + output_json)
+            logger.info("Finished %s" % job["log_id"])
         else:
             logger.info("Still running %s" % job["log_id"])
 
