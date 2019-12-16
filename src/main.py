@@ -13,7 +13,7 @@ from msbase.logging import logger
 
 from model import DB
 from common import run_cmd
-from resource import ssh, scp, persist
+from resource import Resource
 
 jobs_config = yaml.safe_load(open("config/jobs.yaml", "r"))
 resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
@@ -60,10 +60,11 @@ def launch_job(job, compute, storage):
         "steps": job["steps"]
     }))
     task_file.close()
-    scp(compute, task_file.name, "task.json")
-    scp(compute, "src/runner.py")
-    logger.info(ssh(compute, "nohup python3 runner.py > /dev/null 2>&1 &"))
-    pid = int(ssh(compute, "sleep 1; cat run.pid").strip())
+    resource = Resource(compute, storage)
+    resource.scp_compute(task_file.name, "task.json")
+    resource.scp_compute("src/runner.py")
+    logger.info(resource.ssh_compute("nohup python3 runner.py > /dev/null 2>&1 &"))
+    pid = int(resource.ssh_compute("sleep 1; cat run.pid").strip())
     db.update_pid(job_id, pid)
 
     # launch job and store the running PID
@@ -95,23 +96,22 @@ def process_job_to_launch(job):
 def process_running_jobs():
     running_jobs = db.fetch_running_jobs()
     for job in running_jobs:
-        compute = json.loads(job["compute"])
-        storage = json.loads(job["storage"])
+        resource = Resource(json.loads(job["compute"]), json.loads(job["storage"]))
         persisted = json.loads(job["job_persisted"])
         log_id = str(job["log_id"])
-        ret = ssh(compute, "ps -p %s" % job["pid"])
+        ret = resource.ssh_compute("ps -p %s" % job["pid"])
         logger.info(ret)
         if str(job["pid"]) not in ret:
             # collect output
             output_json = log_id + ".json"
-            scp(compute, ".", renamed=output_json, to_remote=False)
+            resource.scp_compute(".", renamed=output_json, to_remote=False)
             output = json.loads(open(output_json, "r").read())
             db.update_job_status(log_id, output["status"], datetime.date.fromtimestamp(output["finished_timestamp"]))
             os.system("rm " + output_json)
             # collect persisted
             for persisted_item in persisted:
-                persist(compute, storage, log_id, persisted_item)
-            persist(compute, storage, log_id, output_json, renamed="output.json")
+                resource.persist(log_id, persisted_item)
+            resource.persist(log_id, output_json, renamed="output.json")
             logger.info("Finished %s" % log_id)
         else:
             logger.info("Still running %s" % log_id)

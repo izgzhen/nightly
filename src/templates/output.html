@@ -8,14 +8,14 @@
     <h1>Nightly Panel</h1>
     <h2>Output for log {{ log_id }} </h2>
     <div>
-        <h3>stdout</h3>
-        {% for stdout in output["stdout"] %}
-        <code>{{ stdout }}</code>
-        {% endfor %}
-
         <h3>stderr</h3>
         {% for stderr in output["stderr"] %}
         <code>{{ stderr }}</code>
+        {% endfor %}
+
+        <h3>stdout</h3>
+        {% for stdout in output["stdout"] %}
+        <code>{{ stdout }}</code>
         {% endfor %}
     </div>
 </body>

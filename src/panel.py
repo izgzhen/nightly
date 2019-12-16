@@ -4,7 +4,7 @@ import json
 import tempfile
 
 from model import DB
-from resource import fetch
+from resource import Resource
 
 db = DB()
 
@@ -20,9 +20,9 @@ def index():
 @app.route('/output/<log_id>')
 def serve_output(log_id: int):
     log = db.fetch_log_by_id(log_id)
-    storage = json.loads(log["storage"])
     tf = tempfile.NamedTemporaryFile(delete=False)
     tf.close()
-    fetch(storage, log_id, "output.json", tf.name)
+    resource = Resource(json.loads(log["compute"]), json.loads(log["storage"]))
+    resource.fetch(log_id, "output.json", tf.name)
     output = json.load(open(tf.name, "r"))
     return render_template('output.html', log_id=log_id, output=output)
