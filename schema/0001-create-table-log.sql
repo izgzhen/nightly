@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS log (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     job_name TEXT NOT NULL,
     job_steps TEXT NOT NULL, -- JSON string
-    job_persisted TEXT, -- JSON string of persisted field in job config, null if job failed
+    job_persisted TEXT NOT NULL,
     job_started DATETIME NOT NULL,
     job_finished DATETIME, -- time for either failed or success run
     job_status ENUM('running', 'ok', 'failed') NOT NULL,

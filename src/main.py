@@ -44,14 +44,16 @@ def total_log_count():
     cur.execute("SELECT COUNT(*) FROM log")
     return cur.fetchone()[0]
 
-def create_new_job_row(job, compute):
+def create_new_job_row(job, compute, storage):
     job_started = datetime.datetime.now()
     return insert_row_get_id({
         "job_name": job["name"],
         "job_steps": json.dumps(job["steps"]),
+        "job_persisted": json.dumps(job["persisted"]),
         "job_started": job_started,
         "job_status": "running",
-        "compute": json.dumps(compute)
+        "compute": json.dumps(compute),
+        "storage": json.dumps(storage)
     }, "log")
 
 def run_cmd(cmd):
@@ -82,9 +84,9 @@ def update_pid(job_id, pid):
     cur.close()
 
 # FIXME: launch job in a new temporary folder
-def launch_job(job, compute):
+def launch_job(job, compute, storage):
     # prepare and send task.json
-    job_id = create_new_job_row(job, compute)
+    job_id = create_new_job_row(job, compute, storage)
     task_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
     task_file.write(json.dumps({
         "task_id": job_id,
@@ -150,8 +152,7 @@ def process_job_to_launch(job):
     if compute is None:
         return None
 
-    launch_job(job, compute)
-
+    launch_job(job, compute, storage)
 
 def fetch_running_jobs():
     cur = db.cursor(pymysql.cursors.DictCursor)
@@ -164,21 +165,35 @@ def update_job_output(job_id, output):
                 "WHERE log_id = %s", (json.dumps(output["stderr"]), json.dumps(output["stdout"]), output["status"], job_id))
     cur.close()
 
+def persist(compute, storage, log_id: str, persisted_item: str):
+    assert storage["type"] == "linux-fs"
+    assert storage["host"] == compute["host"]
+    dest_dir = storage["where"] + "/" + log_id
+    ssh(compute, "mkdir -p " + dest_dir)
+    ssh(compute, "cp -r " + persisted_item + " " + dest_dir)
+
 def process_running_jobs():
     running_jobs = fetch_running_jobs()
     for job in running_jobs:
         compute = json.loads(job["compute"])
+        storage = json.loads(job["storage"])
+        persisted = json.loads(job["job_persisted"])
+        log_id = str(job["log_id"])
         ret = ssh(compute, "ps -p %s" % job["pid"])
         logger.info(ret)
         if str(job["pid"]) not in ret:
-            output_json = str(job["log_id"]) + ".json"
+            # collect output
+            output_json = log_id + ".json"
             scp(compute, ".", renamed=output_json, to_remote=False)
             output = json.loads(open(output_json, "r").read())
-            update_job_output(job["log_id"], output)
+            update_job_output(log_id, output)
             os.system("rm " + output_json)
-            logger.info("Finished %s" % job["log_id"])
+            # collect persisted
+            for persisted_item in persisted:
+                persist(compute, storage, log_id, persisted_item)
+            logger.info("Finished %s" % log_id)
         else:
-            logger.info("Still running %s" % job["log_id"])
+            logger.info("Still running %s" % log_id)
 
 while True:
     logger.info("Total log: %s" % total_log_count())
