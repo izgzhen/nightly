@@ -1,3 +1,4 @@
 config
 .venv
 __pycache__
+main.log

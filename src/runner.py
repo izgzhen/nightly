@@ -1,8 +1,11 @@
 import sys
 import json
+import os
 import subprocess
 
 task = json.load(open("task.json", "r"))
+
+open("run.pid", "w").write(str(os.getpid()))
 
 stdout = []
 stderr = []

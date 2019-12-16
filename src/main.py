@@ -71,8 +71,9 @@ def scp(compute, filepath, renamed: str = None, to_remote: bool = True):
         cp = "cp"
     else:
         cp = "scp"
+        dest = host + ":" + dest
     if renamed is not None:
-        dest = host + ":" + dest + "/" + renamed
+        dest = dest + "/" + renamed
     if to_remote:
         return run_cmd(cp + " " + filepath + " " + dest)
     else:
@@ -83,7 +84,7 @@ def ssh(compute, command):
     host = compute["host"]
     cmd = "cd " + compute["working_dir"] + "; " + command
     if host in ["localhost", "127.0.0.1"]:
-        return run_cmd(cmd)
+        return run_cmd("bash -c '" + cmd + "'")
     else:
         return run_cmd("ssh " + host + " '" + cmd + "'")
 
@@ -104,8 +105,8 @@ def launch_job(job, compute, storage):
     task_file.close()
     scp(compute, task_file.name, "task.json")
     scp(compute, "src/runner.py")
-    logger.info(ssh(compute, "nohup python3 runner.py > /dev/null 2>&1 &; echo $! > run.pid"))
-    pid = int(ssh(compute, "cat run.pid").strip())
+    logger.info(ssh(compute, "nohup python3 runner.py > /dev/null 2>&1 &"))
+    pid = int(ssh(compute, "sleep 1; cat run.pid").strip())
     update_pid(job_id, pid)
 
     # launch job and store the running PID
