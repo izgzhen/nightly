@@ -7,46 +7,22 @@ import os
 import json
 import tempfile
 import subprocess
-
 import datetime
 
 from msbase.logging import logger
 
+from model import DB
+
 jobs_config = yaml.safe_load(open("config/jobs.yaml", "r"))
 resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
 
-db = pymysql.connect(**resources_config["logdb"])
+db = DB()
 
 # FIXME: use argparse
 if len(sys.argv) > 1:
     first_arg = sys.argv[1]
     if first_arg == "--upgrade-db":
-        max_version = "1000"
-        cur = db.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS metadata (`version` TEXT NOT NULL)")
-        cur.execute("SELECT `version` FROM metadata")
-        ret_all = cur.fetchall()
-        cur.close()
-        assert len(ret_all) <= 1
-        if len(ret_all) == 0:
-            cur = db.cursor()
-            cur.execute("INSERT INTO metadata (`version`) VALUES (%s)" % max_version)
-            cur.close()
-        else:
-            max_version = ret_all[0][0]
-        for f in sorted(glob.glob("schema/*.sql")):
-            current_version = os.path.basename(f).split("-")[0]
-            if current_version > max_version:
-                cur = db.cursor()
-                query = open(f, "r").read()
-                print(query)
-                cur.execute(query)
-                max_version = max(current_version, max_version)
-                cur.close()
-        cur = db.cursor()
-        cur.execute("UPDATE metadata SET `version` = %s" % max_version)
-        cur.close()
-        db.commit()
+        db.upgrade()
         sys.exit(0)
 
 def get_storage(type_: str):
@@ -60,14 +36,9 @@ def get_compute(type_: str):
         if s["type"] == type_:
             return s
 
-def total_log_count():
-    cur = db.cursor()
-    cur.execute("SELECT COUNT(*) FROM log")
-    return cur.fetchone()[0]
-
 def create_new_job_row(job, compute, storage):
     job_started = datetime.datetime.now()
-    return insert_row_get_id({
+    return db.insert_row_get_id({
         "job_name": job["name"],
         "job_steps": json.dumps(job["steps"]),
         "job_persisted": json.dumps(job["persisted"]),
@@ -109,10 +80,6 @@ def ssh(compute, command):
     else:
         return run_cmd("ssh " + host + " '" + cmd + "'")
 
-def update_pid(job_id, pid):
-    cur = db.cursor()
-    cur.execute("UPDATE log SET pid = %s WHERE log_id = %s", (pid, job_id))
-    cur.close()
 
 # FIXME: launch job in a new temporary folder
 def launch_job(job, compute, storage):
@@ -128,47 +95,18 @@ def launch_job(job, compute, storage):
     scp(compute, "src/runner.py")
     logger.info(ssh(compute, "nohup python3 runner.py > /dev/null 2>&1 &"))
     pid = int(ssh(compute, "sleep 1; cat run.pid").strip())
-    update_pid(job_id, pid)
+    db.update_pid(job_id, pid)
 
     # launch job and store the running PID
     logger.info("Launched job (job_id: %s, PID: %s): %s" % (job_id, pid, job["name"]))
-
-def get_last_run(job):
-    cur = db.cursor()
-    cur.execute("SELECT MAX(job_started) FROM log WHERE job_name = %s", job["name"])
-    return cur.fetchone()[0]
 
 def schedule_to_interval(sched):
     if sched == "nightly":
         return datetime.timedelta(days=1)
     raise Exception("Unknown schedule: " + sched)
 
-def prepare_insert_query(row_dict, table):
-    row_items = list(row_dict.items())
-    fields = ", ".join([ k for k, v in row_items ])
-    placeholders = ", ".join([ "%s" for k, v in row_items ])
-    values = tuple(v for k, v in row_items)
-    return "INSERT INTO %s (%s) VALUES (%s)" % (table, fields, placeholders), values
-
-def insert_row(row_dict, table):
-    cur = db.cursor()
-    query, values = prepare_insert_query(row_dict, table)
-    logger.info(query)
-    cur.execute(query, values)
-    cur.close()
-
-def insert_row_get_id(row_dict, table):
-    cur = db.cursor()
-    query, values = prepare_insert_query(row_dict, table)
-    logger.info(query)
-    cur.execute(query, values)
-    cur.execute("SELECT LAST_INSERT_ID()")
-    ret = cur.fetchone()[0]
-    cur.close()
-    return ret
-
 def process_job_to_launch(job):
-    last_run = get_last_run(job)
+    last_run = db.get_last_run(job)
     if last_run is not None:
         now = datetime.datetime.now()
         interval = schedule_to_interval(job["schedule"])
@@ -185,16 +123,6 @@ def process_job_to_launch(job):
 
     launch_job(job, compute, storage)
 
-def fetch_running_jobs():
-    cur = db.cursor(pymysql.cursors.DictCursor)
-    cur.execute("SELECT * FROM log WHERE job_status = 'running'")
-    return cur.fetchall()
-
-def update_job_status(job_id, status, finished):
-    cur = db.cursor()
-    cur.execute("UPDATE log SET job_status = %s, job_finished = %s WHERE log_id = %s", (status, finished, job_id))
-    cur.close()
-
 def persist(compute, storage, log_id: str, persisted_item: str, renamed: str = None):
     assert storage["type"] == "linux-fs"
     assert storage["host"] == compute["host"]
@@ -206,7 +134,7 @@ def persist(compute, storage, log_id: str, persisted_item: str, renamed: str = N
     ssh(compute, "cp -r " + persisted_item + " " + dest)
 
 def process_running_jobs():
-    running_jobs = fetch_running_jobs()
+    running_jobs = db.fetch_running_jobs()
     for job in running_jobs:
         compute = json.loads(job["compute"])
         storage = json.loads(job["storage"])
@@ -219,7 +147,7 @@ def process_running_jobs():
             output_json = log_id + ".json"
             scp(compute, ".", renamed=output_json, to_remote=False)
             output = json.loads(open(output_json, "r").read())
-            update_job_status(log_id, output["status"], datetime.date.fromtimestamp(output["finished_timestamp"]))
+            db.update_job_status(log_id, output["status"], datetime.date.fromtimestamp(output["finished_timestamp"]))
             os.system("rm " + output_json)
             # collect persisted
             for persisted_item in persisted:
@@ -230,7 +158,7 @@ def process_running_jobs():
             logger.info("Still running %s" % log_id)
 
 while True:
-    logger.info("Total log: %s" % total_log_count())
+    logger.info("Total log: %s" % db.total_log_count())
     for job in jobs_config:
         process_job_to_launch(job)
         db.commit()
