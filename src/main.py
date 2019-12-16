@@ -66,17 +66,26 @@ def scp(compute, filepath, renamed: str = None, to_remote: bool = True):
     """
     assert compute["type"] == "ubuntu-1804-x86_64"
     dest = compute["working_dir"]
-    if renamed is not None:
-        dest = dest + "/" + renamed
-    if to_remote:
-        return run_cmd("scp " + filepath + " " + compute["host"] + ":" + dest)
+    host = compute["host"]
+    if host in ["localhost", "127.0.0.1"]:
+        cp = "cp"
     else:
-        return run_cmd("scp " + compute["host"] + ":" + dest + " " + filepath)
+        cp = "scp"
+    if renamed is not None:
+        dest = host + ":" + dest + "/" + renamed
+    if to_remote:
+        return run_cmd(cp + " " + filepath + " " + dest)
+    else:
+        return run_cmd(cp + " " + dest + " " + filepath)
 
 def ssh(compute, command):
     assert compute["type"] == "ubuntu-1804-x86_64"
+    host = compute["host"]
     cmd = "cd " + compute["working_dir"] + "; " + command
-    return run_cmd("ssh " + compute["host"] + " '" + cmd + "'")
+    if host in ["localhost", "127.0.0.1"]:
+        return run_cmd(cmd)
+    else:
+        return run_cmd("ssh " + host + " '" + cmd + "'")
 
 def update_pid(job_id, pid):
     cur = db.cursor()
