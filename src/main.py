@@ -20,12 +20,33 @@ db = pymysql.connect(**resources_config["logdb"])
 # FIXME: use argparse
 if len(sys.argv) > 1:
     first_arg = sys.argv[1]
-    if first_arg == "--init":
-        for f in sorted(glob.glob("schema/*.sql")):
+    if first_arg == "--upgrade-db":
+        max_version = "1000"
+        cur = db.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS metadata (`version` TEXT NOT NULL)")
+        cur.execute("SELECT `version` FROM metadata")
+        ret_all = cur.fetchall()
+        cur.close()
+        assert len(ret_all) <= 1
+        if len(ret_all) == 0:
             cur = db.cursor()
-            query = open(f, "r").read()
-            print(query)
-            cur.execute(query)
+            cur.execute("INSERT INTO metadata (`version`) VALUES (%s)" % max_version)
+            cur.close()
+        else:
+            max_version = ret_all[0][0]
+        for f in sorted(glob.glob("schema/*.sql")):
+            current_version = os.path.basename(f).split("-")[0]
+            if current_version > max_version:
+                cur = db.cursor()
+                query = open(f, "r").read()
+                print(query)
+                cur.execute(query)
+                max_version = max(current_version, max_version)
+                cur.close()
+        cur = db.cursor()
+        cur.execute("UPDATE metadata SET `version` = %s" % max_version)
+        cur.close()
+        db.commit()
         sys.exit(0)
 
 def get_storage(type_: str):
@@ -169,18 +190,20 @@ def fetch_running_jobs():
     cur.execute("SELECT * FROM log WHERE job_status = 'running'")
     return cur.fetchall()
 
-def update_job_output(job_id, output):
+def update_job_status(job_id, status):
     cur = db.cursor()
-    cur.execute("UPDATE log SET stderr = %s, stdout = %s, job_status = %s" +
-                "WHERE log_id = %s", (json.dumps(output["stderr"]), json.dumps(output["stdout"]), output["status"], job_id))
+    cur.execute("UPDATE log SET job_status = %s WHERE log_id = %s", (status, job_id))
     cur.close()
 
-def persist(compute, storage, log_id: str, persisted_item: str):
+def persist(compute, storage, log_id: str, persisted_item: str, renamed: str = None):
     assert storage["type"] == "linux-fs"
     assert storage["host"] == compute["host"]
     dest_dir = storage["where"] + "/" + log_id
     ssh(compute, "mkdir -p " + dest_dir)
-    ssh(compute, "cp -r " + persisted_item + " " + dest_dir)
+    dest = dest_dir
+    if renamed is not None:
+        dest = dest + "/" + renamed
+    ssh(compute, "cp -r " + persisted_item + " " + dest)
 
 def process_running_jobs():
     running_jobs = fetch_running_jobs()
@@ -196,11 +219,12 @@ def process_running_jobs():
             output_json = log_id + ".json"
             scp(compute, ".", renamed=output_json, to_remote=False)
             output = json.loads(open(output_json, "r").read())
-            update_job_output(log_id, output)
+            update_job_status(log_id, output["status"])
             os.system("rm " + output_json)
             # collect persisted
             for persisted_item in persisted:
                 persist(compute, storage, log_id, persisted_item)
+            persist(compute, storage, log_id, output_json, renamed="output.json")
             logger.info("Finished %s" % log_id)
         else:
             logger.info("Still running %s" % log_id)
