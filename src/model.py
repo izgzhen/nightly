@@ -2,6 +2,7 @@ import yaml
 import glob
 import os
 import pymysql
+import json
 
 from msbase.logging import logger
 
@@ -18,10 +19,27 @@ class DB(object):
     def __init__(self):
         self.db = pymysql.connect(**resources_config["logdb"])
 
+    def fetch_log_by_id(self, log_id: int):
+        cur = self.db.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM log WHERE log_id = %s", (log_id,))
+        return cur.fetchone()
+
     def total_log_count(self):
         cur = self.db.cursor()
         cur.execute("SELECT COUNT(*) FROM log")
         return cur.fetchone()[0]
+
+    def fetch_all_jobs(self):
+        cur = self.db.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM log")
+        return cur.fetchall()
+
+    def fetch_all_jobs_json_decoded(self):
+        ret = self.fetch_all_jobs()
+        for entry in ret:
+            for col in ["job_steps", "job_persisted", "storage", "compute"]:
+                entry[col] = json.loads(entry[col])
+        return ret
 
     def upgrade(self):
         max_version = "1000"

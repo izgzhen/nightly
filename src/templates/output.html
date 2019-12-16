@@ -1,0 +1,21 @@
+<!doctype html>
+<head>
+    <title>Nightly Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+<body>
+    <h1>Nightly Panel</h1>
+    <h2>Output for log {{ log_id }} </h2>
+    <div>
+        <h3>stdout</h3>
+        {% for stdout in output["stdout"] %}
+        <code>{{ stdout }}</code>
+        {% endfor %}
+
+        <h3>stderr</h3>
+        {% for stderr in output["stderr"] %}
+        <code>{{ stderr }}</code>
+        {% endfor %}
+    </div>
+</body>

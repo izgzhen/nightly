@@ -1,0 +1,50 @@
+<!doctype html>
+<head>
+    <title>Nightly Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+<body>
+    <h1>Nightly Panel</h1>
+    <table>
+        <thead>
+            <th>Log ID</th>
+            <th>Job Name</th>
+            <th>Job Steps</th>
+            <th>Job Persisted</th>
+            <th>Job Started</th>
+            <th>Job Finished</th>
+            <th>Job Status</th>
+            <th>Storage</th>
+            <th>Compute</th>
+            <th>More</th>
+        </thead>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log["log_id"] }}</td>
+            <td>{{ log["job_name"] }}</td>
+            <td>
+                {% for step in log["job_steps"] %}
+                <ul>
+                    <code>{{ step }} </code>
+                </ul>
+                {% endfor %}
+            </td>
+            <td>
+                {% for step in log["job_persisted"] %}
+                <ul>
+                    <code>{{ step }} </code>
+                </ul>
+                {% endfor %}
+            </td>
+            <td>{{ log["job_started"] }}</td>
+            <td>{{ log["job_finished"] }}</td>
+            <td>{{ log["job_status"] }}</td>
+            <td><code>{{ log["storage"] }}</code></td>
+            <td><code>{{ log["compute"] }}</code></td>
+            <td><a href="/output/{{ log['log_id'] }}">Output</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>Now: {{ now }} </p>
+</body>
