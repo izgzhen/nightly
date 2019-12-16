@@ -58,12 +58,18 @@ def run_cmd(cmd):
     print("+ " + cmd)
     return subprocess.getoutput(cmd)
 
-def scp(compute, filepath):
+def scp(compute, filepath, renamed: str = None, to_remote: bool = True):
     """
     SSH copy file to compute's working dir
     """
     assert compute["type"] == "ubuntu-1804-x86_64"
-    return run_cmd("scp " + filepath + " " + compute["host"] + ":" + compute["working_dir"])
+    dest = compute["working_dir"]
+    if renamed is not None:
+        dest = dest + "/" + renamed
+    if to_remote:
+        return run_cmd("scp " + filepath + " " + compute["host"] + ":" + dest)
+    else:
+        return run_cmd("scp " + compute["host"] + ":" + dest + " " + filepath)
 
 def ssh(compute, command):
     assert compute["type"] == "ubuntu-1804-x86_64"
@@ -75,6 +81,7 @@ def update_pid(job_id, pid):
     cur.execute("UPDATE log SET pid = %s WHERE log_id = %s", (pid, job_id))
     cur.close()
 
+# FIXME: launch job in a new temporary folder
 def launch_job(job, compute):
     # prepare and send task.json
     job_id = create_new_job_row(job, compute)
@@ -84,9 +91,9 @@ def launch_job(job, compute):
         "steps": job["steps"]
     }))
     task_file.close()
-    scp(compute, task_file.name)
+    scp(compute, task_file.name, "task.json")
     scp(compute, "src/runner.py")
-    ssh(compute, "nohup python3 src/runner.py & echo $! > run.pid")
+    logger.info(ssh(compute, "nohup python3 runner.py > /dev/null 2>&1 &; echo $! > run.pid"))
     pid = int(ssh(compute, "cat run.pid").strip())
     update_pid(job_id, pid)
 
@@ -127,7 +134,7 @@ def insert_row_get_id(row_dict, table):
     cur.close()
     return ret
 
-def process_job(job):
+def process_job_to_launch(job):
     last_run = get_last_run(job)
     if last_run is not None:
         now = datetime.datetime.now()
@@ -145,9 +152,29 @@ def process_job(job):
 
     launch_job(job, compute)
 
+
+def fetch_running_jobs():
+    cur = db.cursor(pymysql.cursors.DictCursor)
+    cur.execute("SELECT * FROM log WHERE job_status = 'running'")
+    return cur.fetchall()
+
+def process_running_jobs():
+    running_jobs = fetch_running_jobs()
+    for job in running_jobs:
+        compute = json.loads(job["compute"])
+        ret = ssh(compute, "ps -p %s" % job["pid"])
+        logger.info(ret)
+        if str(job["pid"]) not in ret:
+            output_json = str(job["log_id"]) + ".json"
+            scp(compute, ".", renamed=output_json, to_remote=False)
+            print(json.loads(open(output_json, "r").read()))
+        else:
+            logger.info("Still running %s" % job["log_id"])
+
 while True:
     logger.info("Total log: %s" % total_log_count())
     for job in jobs_config:
-        process_job(job)
+        process_job_to_launch(job)
         db.commit()
+    process_running_jobs()
     time.sleep(1)

@@ -17,7 +17,7 @@ for s in task["steps"]:
         status = "failed"
         break
 
-open(task["task_id"] + ".json", "w").write(json.dumps({
+open(str(task["task_id"]) + ".json", "w").write(json.dumps({
     "stdout": stdout,
     "stderr": stderr,
     "status": status
