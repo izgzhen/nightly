@@ -43,14 +43,14 @@ class DB(object):
 
     def upgrade(self):
         max_version = "1000"
-        cur = db.cursor()
+        cur = self.db.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS metadata (`version` TEXT NOT NULL)")
         cur.execute("SELECT `version` FROM metadata")
         ret_all = cur.fetchall()
         cur.close()
         assert len(ret_all) <= 1
         if len(ret_all) == 0:
-            cur = db.cursor()
+            cur = self.db.cursor()
             cur.execute("INSERT INTO metadata (`version`) VALUES (%s)" % max_version)
             cur.close()
         else:
@@ -58,16 +58,16 @@ class DB(object):
         for f in sorted(glob.glob("schema/*.sql")):
             current_version = os.path.basename(f).split("-")[0]
             if current_version > max_version:
-                cur = db.cursor()
+                cur = self.db.cursor()
                 query = open(f, "r").read()
                 print(query)
                 cur.execute(query)
                 max_version = max(current_version, max_version)
                 cur.close()
-        cur = db.cursor()
+        cur = self.db.cursor()
         cur.execute("UPDATE metadata SET `version` = %s" % max_version)
         cur.close()
-        db.commit()
+        self.db.commit()
 
     def update_pid(self, job_id, pid):
         cur = self.db.cursor()

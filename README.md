@@ -47,10 +47,10 @@ Inside `config` folder, ignored by git
 
 We use different set of `config` folders for different environment (production or development)
 
-## Initialize database
+## Initialize or update database
 
 ```
-python src/main.py --init
+python src/main.py --upgrade-db
 ```
 
 ## Runbook
