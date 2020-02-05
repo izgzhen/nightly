@@ -12,7 +12,7 @@ function jobToggle(id) {
                 if (elem != statusElem) {
                     elem.style.backgroundColor = "gray";
                 }
-            }    
+            }
         });
     } else {
         row.innerHTML = saved_rows[id].innerHTML;
