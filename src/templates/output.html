@@ -10,12 +10,12 @@
     <div>
         <h3>stderr</h3>
         {% for stderr in output["stderr"] %}
-        <code>{{ stderr }}</code>
+        <code class="codeblock">{{ stderr }}</code>
         {% endfor %}
 
         <h3>stdout</h3>
         {% for stdout in output["stdout"] %}
-        <code>{{ stdout }}</code>
+        <code class="codeblock">{{ stdout }}</code>
         {% endfor %}
     </div>
 </body>
