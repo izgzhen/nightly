@@ -10,12 +10,24 @@ db = DB()
 
 app = Flask(__name__)
 
+def color_of_status(status: str):
+    if status == 'running':
+        return "green"
+    elif status == 'ok':
+        return "black"
+    elif status == 'failed':
+        return "red"
+    else:
+        raise Exception(status)
+
 @app.route('/')
 def index():
+    entries = db.fetch_all_jobs_json_decoded()
+    for entry in entries:
+        entry["job_status_color"] = color_of_status(entry["job_status"])
     return render_template('index.html',
                             now=datetime.datetime.now(),
-                            logs=db.fetch_all_jobs_json_decoded())
-
+                            logs=entries)
 
 @app.route('/output/<log_id>')
 def serve_output(log_id: int):

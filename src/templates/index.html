@@ -39,7 +39,7 @@
             </td>
             <td>{{ log["job_started"] }}</td>
             <td>{{ log["job_finished"] }}</td>
-            <td>{{ log["job_status"] }}</td>
+            <td style="background-color: {{ log["job_status_color"] }}">{{ log["job_status"] }}</td>
             <td><code>{{ log["storage"] }}</code></td>
             <td><code>{{ log["compute"] }}</code></td>
             <td><a href="/output/{{ log['log_id'] }}">Output</a></td>
