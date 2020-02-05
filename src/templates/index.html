@@ -24,6 +24,9 @@
             <td>{{ log["log_id"] }}</td>
             <td>{{ log["job_name"] }}</td>
             <td>
+                {% if 'cwd' in log and log['cwd'] %}
+                <p>cwd: {{ log['cwd'] }}</p>
+                {% endif %}
                 {% for step in log["job_steps"] %}
                 <ul>
                     <code>{{ step }} </code>
@@ -37,7 +40,7 @@
                 </ul>
                 {% endfor %}
             </td>
-            <td>{{ log["job_started"] }}</td>
+            <td>{{ log["job_started"] }} (PID: {{ log["pid"] }}) </td>
             <td>{{ log["job_finished"] }}</td>
             <td style="background-color: {{ log["job_status_color"] }}">{{ log["job_status"] }}</td>
             <td><code>{{ log["storage"] }}</code></td>

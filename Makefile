@@ -2,7 +2,7 @@ all:
 	@echo "run, panel"
 
 run:
-	runpy src/main.py | tee main.log
+	PYLOG=INFO runpy src/main.py | tee main.log
 
 panel:
 	FLASK_APP=src/panel.py flask run

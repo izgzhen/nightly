@@ -41,3 +41,15 @@ def serve_output(log_id: int):
     resource.fetch(log_id, "output.json", tf.name)
     output = json.load(open(tf.name, "r"))
     return render_template('output.html', log_id=log_id, output=output)
+
+@app.after_request
+def add_header(r):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r

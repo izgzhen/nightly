@@ -24,6 +24,7 @@ for s in task["steps"]:
     stdout.append(str(p.stdout, "utf-8"))
     if p.returncode != 0:
         status = "failed"
+        print(status)
         break
 
 os.chdir(nightly_cwd)

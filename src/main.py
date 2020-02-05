@@ -51,6 +51,7 @@ def create_new_job_row(job, compute, storage):
     job_started = datetime.datetime.now()
     return db.insert_row_get_id({
         "job_name": job["name"],
+        "cwd": job["cwd"],
         "job_steps": json.dumps(job["steps"]),
         "job_persisted": json.dumps(job["persisted"]),
         "job_started": job_started,
@@ -74,7 +75,7 @@ def launch_job(job, compute, storage):
     runner_dir = resource.compute["nightly_tmp"]
     resource.scp_to(task_file.name, runner_dir + "/task.json", resource.compute)
     resource.scp_to("src/runner.py", runner_dir + "/runner.py", resource.compute)
-    logger.info(resource.ssh_exec_on_node("cd " + runner_dir + "; " + "nohup python3 runner.py > /dev/null 2>&1 &", resource.compute))
+    logger.info(resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py > /dev/null 2>&1 &", resource.compute))
     pid = int(resource.ssh_exec_on_node("sleep 1; cat " + runner_dir + "/run.pid", resource.compute).strip())
     db.update_pid(job_id, pid)
 
@@ -113,7 +114,7 @@ def process_job_to_launch(job):
         compute = get_compute(job["compute_type"])
 
     if compute is None:
-        print("warning: missing host for " + str(job))
+        log.warning("missing host for " + str(job))
         return None
 
     launch_job(job, compute, storage)
@@ -131,6 +132,9 @@ def process_running_jobs():
             output_json = log_id + ".json"
             runner_dir = resource.compute["nightly_tmp"]
             resource.scp_from(runner_dir + "/" + output_json, ".", node=resource.compute)
+            if not os.path.exists(output_json):
+                db.update_job_status(log_id, "failed", datetime.datetime.now())
+                continue
             output = json.loads(open(output_json, "r").read())
             db.update_job_status(log_id, output["status"], datetime.date.fromtimestamp(output["finished_timestamp"]))
             os.system("rm " + output_json)
