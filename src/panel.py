@@ -30,7 +30,7 @@ def index():
         entry["job_status_color"] = color_of_status(entry["job_status"])
     return render_template('index.html',
                             now=datetime.datetime.now(),
-                            logs=entries)
+                            logs=reversed(entries))
 
 @app.route('/output/<log_id>')
 def serve_output(log_id: int):

@@ -7,7 +7,7 @@
 <body>
     <h1>Nightly Panel</h1>
     <table>
-        <thead>
+        <thead class="header">
             <th>Log ID</th>
             <th>Job Name</th>
             <th>Job Steps</th>
@@ -20,8 +20,8 @@
             <th>More</th>
         </thead>
         {% for log in logs %}
-        <tr>
-            <td>{{ log["log_id"] }}</td>
+        <tr class="row" id="job-{{ log["log_id"] }}">
+            <td class="job-id"><button onclick="jobToggle({{ log["log_id"] }});">{{ log["log_id"] }}</button></td>
             <td>{{ log["job_name"] }}</td>
             <td>
                 {% if 'cwd' in log and log['cwd'] %}
@@ -42,7 +42,7 @@
             </td>
             <td>{{ log["job_started"] }} (PID: {{ log["pid"] }}) </td>
             <td>{{ log["job_finished"] }}</td>
-            <td style="background-color: {{ log["job_status_color"] }}">{{ log["job_status"] }}</td>
+            <td class="job-status" style="background-color: {{ log["job_status_color"] }}">{{ log["job_status"] }}</td>
             <td><code>{{ log["storage"] }}</code></td>
             <td><code>{{ log["compute"] }}</code></td>
             <td><a href="/output/{{ log['log_id'] }}">Output</a></td>
