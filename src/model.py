@@ -74,10 +74,15 @@ class DB(object):
         cur.execute("UPDATE log SET pid = %s WHERE log_id = %s", (pid, job_id))
         cur.close()
 
-    def get_last_run(self, job):
+    def get_last_run_started(self, job):
         cur = self.db.cursor()
         cur.execute("SELECT MAX(job_started) FROM log WHERE job_name = %s", job["name"])
         return cur.fetchone()[0]
+
+    def fetch_running_jobs_of(self, job):
+        cur = self.db.cursor()
+        cur.execute("SELECT * FROM log WHERE job_name = %s AND job_status = 'running'", job["name"])
+        return cur.fetchall()
 
     def insert_row(self, row_dict, table):
         cur = self.db.cursor()
@@ -96,7 +101,7 @@ class DB(object):
         cur.close()
         return ret
 
-    def fetch_running_jobs(self):
+    def fetch_all_running_jobs(self):
         cur = self.db.cursor(pymysql.cursors.DictCursor)
         cur.execute("SELECT * FROM log WHERE job_status = 'running'")
         return cur.fetchall()

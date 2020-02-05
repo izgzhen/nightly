@@ -2,3 +2,4 @@ config
 .venv
 __pycache__
 main.log
+.mypy_cache/

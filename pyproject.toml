@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "nightly"
+version = "0.1.0"
+description = ""
+authors = ["Zhen Zhang <pip@zhen-zhang.com>"]
+license = "Proprietary"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+PyYAML = "5.2"
+PyMySQL = "0.9.3"
+msbase = "0.1.7"
+flask = "1.1.1"
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.761"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

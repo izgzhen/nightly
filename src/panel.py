@@ -1,3 +1,6 @@
+"""
+Job Panel Web Server
+"""
 from flask import Flask, flash, request, redirect, url_for, render_template
 import datetime
 import json

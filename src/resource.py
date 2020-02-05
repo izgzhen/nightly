@@ -1,5 +1,6 @@
 from common import run_cmd
 import yaml
+import tempfile
 
 resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
 
@@ -9,43 +10,53 @@ class Resource(object):
         self.compute = compute
         self.storage = storage
 
-    def scp_compute(self, filepath, renamed: str = None, to_remote: bool = True):
+    def node_is_master(self, node): return self.master["host"] == node["host"]
+
+    def scp_from(self, src_filepath: str, master_filepath: str, node):
         """
-        SSH copy file to compute's working dir
+        SSH copy file from node's src_filepath to master_filepath
         """
-        assert self.compute["type"] == "ubuntu-1804-x86_64"
-        dest = self.compute["working_dir"]
-        host = self.compute["host"]
-        if self.master["host"] == self.compute["host"]:
+        assert node in [self.storage, self.compute]
+        if self.node_is_master(node):
             cp = "cp"
         else:
             cp = "scp"
-            dest = host + ":" + dest
-        if renamed is not None:
-            dest = dest + "/" + renamed
-        if to_remote:
-            return run_cmd(cp + " " + filepath + " " + dest)
-        else:
-            return run_cmd(cp + " " + dest + " " + filepath)
+            src_filepath = node["host"] + ":" + src_filepath
+        run_cmd(cp + " " + src_filepath + " " + master_filepath)
 
-    def ssh_compute(self, command):
-        assert self.compute["type"] == "ubuntu-1804-x86_64"
-        host = self.compute["host"]
-        cmd = "cd " + self.compute["working_dir"] + "; " + command
-        if self.master["host"] == self.compute["host"]:
+    def scp_to(self, master_filepath: str, tgt_filepath: str, node):
+        """
+        SSH copy file from master_filepath to node's tgt_filepath
+        """
+        assert node in [self.storage, self.compute]
+        if self.node_is_master(node):
+            cp = "cp"
+        else:
+            cp = "scp"
+            tgt_filepath = node["host"] + ":" + tgt_filepath
+        run_cmd(cp + " " + master_filepath + " " + tgt_filepath)
+
+    def ssh_exec_on_node(self, cmd: str, node):
+        assert node in [self.storage, self.compute]
+        if self.node_is_master(node):
             return run_cmd("bash -c '" + cmd + "'")
         else:
-            return run_cmd("ssh " + host + " '" + cmd + "'")
+            return run_cmd("ssh " + node["host"] + " '" + cmd + "'")
 
-    def persist(self, log_id: str, persisted_item: str, renamed: str = None):
-        assert self.storage["type"] == "linux-fs"
-        assert self.storage["host"] == self.compute["host"]
+    def persist(self, log_id: str, runner_filepath: str, new_filename: str = None):
+        """
+        copy file at runner:runner_filepath to storage:storage["where"]/log_id/(new_filename)
+        """
+        tmpfile = tempfile.NamedTemporaryFile(delete=False).name
+        self.scp_from(runner_filepath, tmpfile, self.compute)
+
         dest_dir = self.storage["where"] + "/" + log_id
-        self.ssh_compute("mkdir -p " + dest_dir)
+        self.ssh_exec_on_node("mkdir -p " + dest_dir, self.storage)
         dest = dest_dir
-        if renamed is not None:
-            dest = dest + "/" + renamed
-        self.ssh_compute("cp -r " + persisted_item + " " + dest)
+        if new_filename is not None:
+            dest = dest + "/" + new_filename
+
+        self.scp_to(tmpfile, dest, self.storage)
 
     def fetch(self, log_id: int, persisted_item: str, save_to: str):
         assert self.storage["type"] == "linux-fs"
