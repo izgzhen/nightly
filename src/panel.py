@@ -17,7 +17,7 @@ def color_of_status(status: str):
     if status == 'running':
         return "green"
     elif status == 'ok':
-        return "black"
+        return "white"
     elif status == 'failed':
         return "red"
     else:
