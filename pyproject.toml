@@ -11,9 +11,9 @@ PyYAML = "5.2"
 PyMySQL = "0.9.3"
 msbase = "0.1.7"
 flask = "1.1.1"
+mypy = "^0.761"
 
 [tool.poetry.dev-dependencies]
-mypy = "^0.761"
 
 [build-system]
 requires = ["poetry>=0.12"]
