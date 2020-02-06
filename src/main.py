@@ -66,16 +66,15 @@ def launch_job(job, compute, storage):
     job_id = create_new_job_row(job, compute, storage)
     task_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
     task_file.write(json.dumps({
-        "task_id": job_id,
         "cwd": job["cwd"],
         "steps": job["steps"]
     }))
     task_file.close()
     resource = Resource(compute, storage)
     runner_dir = resource.compute["nightly_tmp"]
-    resource.scp_to(task_file.name, runner_dir + "/task.json", resource.compute)
+    resource.scp_to(task_file.name, runner_dir + "/%s-input.json" % job_id, resource.compute)
     resource.scp_to("src/runner.py", runner_dir + "/runner.py", resource.compute)
-    logger.info(resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py > /dev/null 2>&1 &", resource.compute))
+    logger.info(resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py %s > /dev/null 2>&1 &" % job_id, resource.compute))
     pid = int(resource.ssh_exec_on_node("sleep 1; cat " + runner_dir + "/run.pid", resource.compute).strip())
     db.update_pid(job_id, pid)
 
@@ -129,7 +128,7 @@ def process_running_jobs():
         logger.info(ret)
         if str(job["pid"]) not in ret:
             # collect output
-            output_json = log_id + ".json"
+            output_json = log_id + "-output.json"
             runner_dir = resource.compute["nightly_tmp"]
             resource.scp_from(runner_dir + "/" + output_json, ".", node=resource.compute)
             if not os.path.exists(output_json):
@@ -141,6 +140,12 @@ def process_running_jobs():
             # collect persisted
             for persisted_item in persisted:
                 resource.persist(log_id, runner_dir + "/" + persisted_item, os.path.basename(persisted_item))
+            for si in range(len(job["steps"])):
+                f = "%s-%s-stderr.txt" % (log_id, si)
+                resource.persist(log_id, runner_dir + "/" + f, f)
+                f = "%s-%s-stdout.txt" % (log_id, si)
+                resource.persist(log_id, runner_dir + "/" + f, f)
+
             resource.persist(log_id, runner_dir + "/" + output_json, "output.json")
             logger.info("Finished %s" % log_id)
         else:
@@ -149,6 +154,8 @@ def process_running_jobs():
 while True:
     logger.info("Total log: %s" % db.total_log_count())
     for job in jobs_config:
+        if "cwd" not in job:
+            job["cwd"] = None
         if job["enabled"]:
             process_job_to_launch(job)
         db.commit()

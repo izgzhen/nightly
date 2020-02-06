@@ -45,9 +45,7 @@
             <td class="job-status" style="background-color: {{ log["job_status_color"] }}">{{ log["job_status"] }}</td>
             <td><code>{{ log["storage"] }}</code></td>
             <td><code>{{ log["compute"] }}</code></td>
-            {% if log["job_status"] != "running" %}
             <td><a href="/output/{{ log['log_id'] }}">Output</a></td>
-            {% endif %}
         </tr>
         {% endfor %}
     </table>

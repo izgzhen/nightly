@@ -46,21 +46,23 @@ def index():
 @app.route('/output/<log_id>')
 def serve_output(log_id: int):
     log = db.fetch_log_by_id(log_id)
-    tf = tempfile.NamedTemporaryFile(delete=False)
-    tf.close()
-    resource = Resource(json.loads(log["compute"]), json.loads(log["storage"]))
-    resource.fetch(log_id, "output.json", tf.name)
-    output = json.load(open(tf.name, "r"))
-    return render_template('output.html', log_id=log_id, output=output)
+    tmpfile = tempfile.NamedTemporaryFile(delete=False).name
 
-@app.after_request
-def add_header(r):
-    """
-    Add headers to both force latest IE rendering engine or Chrome Frame,
-    and also to cache the rendered page for 10 minutes.
-    """
-    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    r.headers["Pragma"] = "no-cache"
-    r.headers["Expires"] = "0"
-    r.headers['Cache-Control'] = 'public, max-age=0'
-    return r
+    resource = Resource(log["compute"], log["storage"])
+    stderr = []
+    stdout = []
+    if log["job_status"] == "running":
+        # fetch from running node
+        for si in range(len(log["job_steps"])):
+            resource.scp_from(resource.compute["nightly_tmp"] + "/%s-%s-stdout.txt" % (log_id, si), tmpfile, resource.compute)
+            stdout.append(open(tmpfile, "r").read())
+            resource.scp_from(resource.compute["nightly_tmp"] + "/%s-%s-stderr.txt" % (log_id, si), tmpfile, resource.compute)
+            stderr.append(open(tmpfile, "r").read())
+    else:
+        for si in range(len(log["job_steps"])):
+            resource.fetch_from_storage(log_id, "%s-%s-stdout.txt" % (log_id, si), tmpfile)
+            stdout.append(open(tmpfile, "r").read())
+            resource.fetch_from_storage(log_id, "%s-%s-stderr.txt" % (log_id, si), tmpfile)
+            stderr.append(open(tmpfile, "r").read())
+
+    return render_template('output.html', log_id=log_id, stderr=stderr, stdout=stdout)

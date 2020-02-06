@@ -22,7 +22,10 @@ class DB(object):
     def fetch_log_by_id(self, log_id: int):
         cur = self.db.cursor(pymysql.cursors.DictCursor)
         cur.execute("SELECT * FROM log WHERE log_id = %s", (log_id,))
-        return cur.fetchone()
+        entry = cur.fetchone()
+        for col in ["job_steps", "job_persisted", "storage", "compute"]:
+            entry[col] = json.loads(entry[col])
+        return entry
 
     def total_log_count(self):
         cur = self.db.cursor()
@@ -32,7 +35,10 @@ class DB(object):
     def fetch_all_jobs(self):
         cur = self.db.cursor(pymysql.cursors.DictCursor)
         cur.execute("SELECT * FROM log")
-        return cur.fetchall()
+        ret = cur.fetchall()
+        cur.close()
+        self.db.commit()
+        return ret
 
     def fetch_all_jobs_json_decoded(self):
         ret = self.fetch_all_jobs()

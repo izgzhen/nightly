@@ -9,13 +9,13 @@
     <h2>Output for log {{ log_id }} </h2>
     <div>
         <h3>stderr</h3>
-        {% for stderr in output["stderr"] %}
-        <code class="codeblock">{{ stderr }}</code>
+        {% for blk in stderr %}
+        <code class="codeblock">{{ blk }}</code>
         {% endfor %}
 
         <h3>stdout</h3>
-        {% for stdout in output["stdout"] %}
-        <code class="codeblock">{{ stdout }}</code>
+        {% for blk in stdout %}
+        <code class="codeblock">{{ blk }}</code>
         {% endfor %}
     </div>
 </body>

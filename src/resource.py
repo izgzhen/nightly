@@ -58,8 +58,9 @@ class Resource(object):
 
         self.scp_to(tmpfile, dest, self.storage)
 
-    def fetch(self, log_id: int, persisted_item: str, save_to: str):
-        assert self.storage["type"] == "linux-fs"
+    def fetch_from_storage(self, log_id: int, persisted_item: str, save_to: str):
+        """Fetch file from storage node to master node
+        """
         print("Fetching output of " + str(log_id) + " to " + save_to)
         if self.storage["host"] == self.master["host"]:
             src = self.storage["where"] + "/" + str(log_id) + "/" + persisted_item

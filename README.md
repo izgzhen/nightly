@@ -67,3 +67,5 @@ Web panel:
 make panel # debug mode
 export BASIC_AUTH_USERNAME=...; export BASIC_AUTH_PASSWORD=...; make panel-prod
 ```
+
+Currently, panel server and master daemon must be the same node.
