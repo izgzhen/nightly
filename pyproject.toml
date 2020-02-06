@@ -12,6 +12,7 @@ PyMySQL = "0.9.3"
 msbase = "0.1.7"
 flask = "1.1.1"
 mypy = "^0.761"
+Flask-BasicAuth = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 

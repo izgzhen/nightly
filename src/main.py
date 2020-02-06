@@ -90,7 +90,7 @@ def schedule_to_interval(sched):
 def process_job_to_launch(job):
     if job["schedule"] in ["nightly"]:
         # Check if we need to wait until an internal after the last run of the same job finished
-        last_run = db.fetch_running_jobs_of(job)
+        last_run = db.get_last_run_started(job)
         if last_run is not None:
             now = datetime.datetime.now()
             interval = schedule_to_interval(job["schedule"])

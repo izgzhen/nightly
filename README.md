@@ -65,5 +65,5 @@ Web panel:
 
 ```
 make panel # debug mode
-make panel-prod # production mode
+export BASIC_AUTH_USERNAME=...; export BASIC_AUTH_PASSWORD=...; make panel-prod
 ```

@@ -2,9 +2,12 @@
 Job Panel Web Server
 """
 from flask import Flask, flash, request, redirect, url_for, render_template
+from flask_basicauth import BasicAuth
+
 import datetime
 import json
 import tempfile
+import os
 
 from model import DB
 from resource import Resource
@@ -12,6 +15,14 @@ from resource import Resource
 db = DB()
 
 app = Flask(__name__)
+
+if os.getenv("DEBUG_MODE") != "1":
+    for e in ['BASIC_AUTH_USERNAME', 'BASIC_AUTH_PASSWORD']:
+        v = os.getenv(e)
+        assert v is not None
+        app.config[e] = v
+    app.config['BASIC_AUTH_FORCE'] = True # force auth all requests
+    basic_auth = BasicAuth(app)
 
 def color_of_status(status: str):
     if status == 'running':
