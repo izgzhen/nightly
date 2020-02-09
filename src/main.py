@@ -121,8 +121,8 @@ def process_job_to_launch(job):
 def process_running_jobs():
     running_jobs = db.fetch_all_running_jobs()
     for job in running_jobs:
-        resource = Resource(json.loads(job["compute"]), json.loads(job["storage"]))
-        persisted = json.loads(job["job_persisted"])
+        resource = Resource(job["compute"], job["storage"])
+        persisted = job["job_persisted"]
         log_id = str(job["log_id"])
         ret = resource.ssh_exec_on_node("ps -p %s" % job["pid"], resource.compute)
         logger.info(ret)

@@ -36,7 +36,7 @@ def color_of_status(status: str):
 
 @app.route('/')
 def index():
-    entries = db.fetch_all_jobs_json_decoded()
+    entries = db.fetch_all_jobs()
     for entry in entries:
         entry["job_status_color"] = color_of_status(entry["job_status"])
     return render_template('index.html',
