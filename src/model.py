@@ -29,9 +29,12 @@ class DB(object):
             cur.execute(query, args)
         self.db.commit()
 
-    def exec_fetch(self, query, args=(), mode=str, dict=False):
+    def exec_fetch(self, query, args=(), mode=str, return_dict=False):
         assert mode in ["one", "all"]
-        cur = self.db.cursor(pymysql.cursors.DictCursor)
+        if return_dict:
+            cur = self.db.cursor(pymysql.cursors.DictCursor)
+        else:
+            cur = self.db.cursor()
         cur.execute(query, args)
         if mode == "one":
             ret = cur.fetchone()
@@ -41,20 +44,20 @@ class DB(object):
         self.db.commit()
         return ret
 
-    def exec_fetch_one(self, query, args=(), dict=False):
-        return self.exec_fetch(query, args, mode="one", dict=dict)
+    def exec_fetch_one(self, query, args=(), return_dict=False):
+        return self.exec_fetch(query, args, mode="one", return_dict=return_dict)
 
-    def exec_fetch_all(self, query, args=(), dict=False):
-        return self.exec_fetch(query, args, mode="all", dict=dict)
+    def exec_fetch_all(self, query, args=(), return_dict=False):
+        return self.exec_fetch(query, args, mode="all", return_dict=return_dict)
 
     def fetch_log_by_id(self, log_id: int):
-        return decode_entry(self.exec_fetch_one("SELECT * FROM log WHERE log_id = %s", (log_id,), dict=True))
+        return decode_entry(self.exec_fetch_one("SELECT * FROM log WHERE log_id = %s", (log_id,), return_dict=True))
 
     def total_log_count(self):
         return self.exec_fetch_one("SELECT COUNT(*) FROM log")[0]
 
     def fetch_all_jobs(self):
-        return [ decode_entry(e) for e in self.exec_fetch_all("SELECT * FROM log", dict=True) ]
+        return [ decode_entry(e) for e in self.exec_fetch_all("SELECT * FROM log", return_dict=True) ]
 
     def upgrade(self):
         max_version = "1000"
@@ -91,7 +94,7 @@ class DB(object):
         return self.exec_fetch_one("SELECT MAX(job_started) FROM log WHERE job_name = %s", job["name"])[0]
 
     def fetch_running_jobs_of(self, job):
-        return cur.exec_fetch_all("SELECT * FROM log WHERE job_name = %s AND job_status = 'running'", job["name"])
+        return self.exec_fetch_all("SELECT * FROM log WHERE job_name = %s AND job_status = 'running'", job["name"])
 
     def insert_row(self, row_dict, table):
         query, values = prepare_insert_query(row_dict, table)
@@ -109,7 +112,7 @@ class DB(object):
         return ret
 
     def fetch_all_running_jobs(self):
-        return [ decode_entry(e) for e in self.exec_fetch_all("SELECT * FROM log WHERE job_status = 'running'", dict=True) ]
+        return [ decode_entry(e) for e in self.exec_fetch_all("SELECT * FROM log WHERE job_status = 'running'", return_dict=True) ]
 
     def update_job_status(self, job_id, status, finished):
         self.exec("UPDATE log SET job_status = %s, job_finished = %s WHERE log_id = %s", (status, finished, job_id))

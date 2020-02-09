@@ -140,7 +140,7 @@ def process_running_jobs():
             # collect persisted
             for persisted_item in persisted:
                 resource.persist(log_id, runner_dir + "/" + persisted_item, os.path.basename(persisted_item))
-            for si in range(len(job["steps"])):
+            for si in range(len(job["job_steps"])):
                 f = "%s-%s-stderr.txt" % (log_id, si)
                 resource.persist(log_id, runner_dir + "/" + f, f)
                 f = "%s-%s-stdout.txt" % (log_id, si)
