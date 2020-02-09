@@ -3,6 +3,7 @@ import glob
 import os
 import pymysql
 import json
+import time
 
 from msbase.logging import logger
 
@@ -22,27 +23,40 @@ def decode_entry(entry):
 
 class DB(object):
     def __init__(self):
-        self.db = pymysql.connect(**resources_config["logdb"])
+        self.db_connection_retry_in_seconds = 60
+        print("Connecting DB")
+        self.db_ = pymysql.connect(**resources_config["logdb"])
+
+    def db(self):
+        try:
+            self.db_.ping(reconnect=False)
+        except Exception as e:
+            print(e)
+            time.sleep(self.db_connection_retry_in_seconds)
+            self.db_connection_retry_in_seconds += 60
+            print("Connecting DB")
+            self.db_ = pymysql.connect(**resources_config["logdb"])
+        return self.db_
 
     def exec(self, query, args=()):
-        with self.db as cur:
+        with self.db() as cur:
             logger.info(query % args)
             cur.execute(query, args)
-        self.db.commit()
+        self.db().commit()
 
     def exec_fetch(self, query, args=(), mode=str, return_dict=False):
         assert mode in ["one", "all"]
         if return_dict:
-            cur = self.db.cursor(pymysql.cursors.DictCursor)
+            cur = self.db().cursor(pymysql.cursors.DictCursor)
         else:
-            cur = self.db.cursor()
+            cur = self.db().cursor()
         cur.execute(query, args)
         if mode == "one":
             ret = cur.fetchone()
         else:
             ret = cur.fetchall()
         cur.close()
-        self.db.commit()
+        self.db().commit()
         return ret
 
     def exec_fetch_one(self, query, args=(), return_dict=False):
@@ -62,14 +76,14 @@ class DB(object):
 
     def upgrade(self):
         max_version = "1000"
-        cur = self.db.cursor()
+        cur = self.db().cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS metadata (`version` TEXT NOT NULL)")
         cur.execute("SELECT `version` FROM metadata")
         ret_all = cur.fetchall()
         cur.close()
         assert len(ret_all) <= 1
         if len(ret_all) == 0:
-            cur = self.db.cursor()
+            cur = self.db().cursor()
             cur.execute("INSERT INTO metadata (`version`) VALUES (%s)" % max_version)
             cur.close()
         else:
@@ -77,16 +91,16 @@ class DB(object):
         for f in sorted(glob.glob("schema/*.sql")):
             current_version = os.path.basename(f).split("-")[0]
             if current_version > max_version:
-                cur = self.db.cursor()
+                cur = self.db().cursor()
                 query = open(f, "r").read()
                 print(query)
                 cur.execute(query)
                 max_version = max(current_version, max_version)
                 cur.close()
-        cur = self.db.cursor()
+        cur = self.db().cursor()
         cur.execute("UPDATE metadata SET `version` = %s" % max_version)
         cur.close()
-        self.db.commit()
+        self.db().commit()
 
     def update_pid(self, job_id, pid):
         self.exec("UPDATE log SET pid = %s WHERE log_id = %s", (pid, job_id))
@@ -102,14 +116,14 @@ class DB(object):
         self.exec(query, values)
 
     def insert_row_get_id(self, row_dict, table):
-        cur = self.db.cursor()
+        cur = self.db().cursor()
         query, values = prepare_insert_query(row_dict, table)
         logger.info(query)
         cur.execute(query, values)
         cur.execute("SELECT LAST_INSERT_ID()")
         ret = cur.fetchone()[0]
         cur.close()
-        self.db.commit()
+        self.db().commit()
         return ret
 
     def fetch_all_running_jobs(self):
@@ -119,4 +133,4 @@ class DB(object):
         self.exec("UPDATE log SET job_status = %s, job_finished = %s WHERE log_id = %s", (status, finished, job_id))
 
     def commit(self):
-        self.db.commit()
+        self.db().commit()
