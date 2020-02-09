@@ -26,6 +26,7 @@ class DB(object):
 
     def exec(self, query, args=()):
         with self.db as cur:
+            logger.info(query % args)
             cur.execute(query, args)
         self.db.commit()
 

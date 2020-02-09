@@ -74,7 +74,7 @@ def launch_job(job, compute, storage):
     runner_dir = resource.compute["nightly_tmp"]
     resource.scp_to(task_file.name, runner_dir + "/%s-input.json" % job_id, resource.compute)
     resource.scp_to("src/runner.py", runner_dir + "/runner.py", resource.compute)
-    logger.info(resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py %s > /dev/null 2>&1 &" % job_id, resource.compute))
+    resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py %s > /dev/null 2>&1 &" % job_id, resource.compute)
     pid = int(resource.ssh_exec_on_node("sleep 1; cat " + runner_dir + "/run.pid", resource.compute).strip())
     db.update_pid(job_id, pid)
 
@@ -125,7 +125,6 @@ def process_running_jobs():
         persisted = job["job_persisted"]
         log_id = str(job["log_id"])
         ret = resource.ssh_exec_on_node("ps -p %s" % job["pid"], resource.compute)
-        logger.info(ret)
         if str(job["pid"]) not in ret:
             # collect output
             output_json = log_id + "-output.json"
@@ -147,12 +146,12 @@ def process_running_jobs():
                 resource.persist(log_id, runner_dir + "/" + f, f)
 
             resource.persist(log_id, runner_dir + "/" + output_json, "output.json")
-            logger.info("Finished %s" % log_id)
+            logger.info("Finished #%s" % log_id)
         else:
-            logger.info("Still running %s" % log_id)
+            logger.info("Still running #%s" % log_id)
 
 while True:
-    logger.info("Total log: %s" % db.total_log_count())
+    logger.info("Scanning all jobs: %s" % db.total_log_count())
     for job in jobs_config:
         if "cwd" not in job:
             job["cwd"] = None
