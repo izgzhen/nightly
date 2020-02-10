@@ -23,7 +23,6 @@ def decode_entry(entry):
 
 class DB(object):
     def __init__(self):
-        self.db_connection_retry_in_seconds = 60
         print("Connecting DB")
         self.db_ = pymysql.connect(**resources_config["logdb"])
 
@@ -32,8 +31,6 @@ class DB(object):
             self.db_.ping(reconnect=False)
         except Exception as e:
             print(e)
-            time.sleep(self.db_connection_retry_in_seconds)
-            self.db_connection_retry_in_seconds += 60
             print("Connecting DB")
             self.db_ = pymysql.connect(**resources_config["logdb"])
         return self.db_
