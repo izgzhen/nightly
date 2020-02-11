@@ -18,7 +18,8 @@ from model import DB
 from common import run_cmd
 from resource import Resource
 
-jobs_config = yaml.safe_load(open("config/jobs.yaml", "r"))
+def get_jobs_config():
+    return yaml.safe_load(open("config/jobs.yaml", "r"))
 resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
 
 db = DB()
@@ -152,7 +153,7 @@ def process_running_jobs():
 
 while True:
     logger.info("Scanning all jobs: %s" % db.total_log_count())
-    for job in jobs_config:
+    for job in get_jobs_config():
         if "cwd" not in job:
             job["cwd"] = None
         if job["enabled"]:
