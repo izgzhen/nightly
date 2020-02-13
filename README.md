@@ -69,3 +69,13 @@ export BASIC_AUTH_USERNAME=...; export BASIC_AUTH_PASSWORD=...; make panel-prod
 ```
 
 Currently, panel server and master daemon must be the same node.
+
+## Demo
+
+Homepage:
+
+![](home.png)
+
+Output page:
+
+![](output.png)
