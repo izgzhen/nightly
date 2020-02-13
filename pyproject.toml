@@ -3,7 +3,7 @@ name = "nightly"
 version = "0.1.0"
 description = ""
 authors = ["Zhen Zhang <pip@zhen-zhang.com>"]
-license = "Proprietary"
+license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "^3.6"
