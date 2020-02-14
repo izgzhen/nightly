@@ -53,6 +53,7 @@ def create_new_job_row(job, compute, storage):
     return db.insert_row_get_id({
         "job_name": job["name"],
         "cwd": job["cwd"],
+        "env": json.dumps(job["env"]),
         "job_steps": json.dumps(job["steps"]),
         "job_persisted": json.dumps(job["persisted"]),
         "job_started": job_started,
@@ -68,6 +69,7 @@ def launch_job(job, compute, storage):
     task_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
     task_file.write(json.dumps({
         "cwd": job["cwd"],
+        "env": job["env"],
         "steps": job["steps"]
     }))
     task_file.close()
@@ -156,6 +158,8 @@ while True:
     for job in get_jobs_config():
         if "cwd" not in job:
             job["cwd"] = None
+        if "env" not in job:
+            job["env"] = {}
         if job["enabled"]:
             process_job_to_launch(job)
         db.commit()

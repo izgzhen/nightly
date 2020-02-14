@@ -17,8 +17,9 @@ def prepare_insert_query(row_dict, table):
     return "INSERT INTO %s (%s) VALUES (%s)" % (table, fields, placeholders), values
 
 def decode_entry(entry):
-    for col in ["job_steps", "job_persisted", "storage", "compute"]:
-        entry[col] = json.loads(entry[col])
+    for col in ["job_steps", "job_persisted", "storage", "compute", "env"]:
+        if entry[col] is not None:
+            entry[col] = json.loads(entry[col])
     return entry
 
 class DB(object):

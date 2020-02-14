@@ -14,12 +14,17 @@ status = "ok"
 if task["cwd"]:
     os.chdir(task["cwd"])
 
+if task["env"]:
+    env = task["env"]
+else:
+    env = {}
+
 for si, s in enumerate(task["steps"]):
     stdout_output_path = "%s/%s-%s-stdout.txt" % (nightly_cwd, task_id, si)
     stderr_output_path = "%s/%s-%s-stderr.txt" % (nightly_cwd, task_id, si)
     with open(stdout_output_path, "w") as f_stdout:
         with open(stderr_output_path, "w") as f_stderr:
-            p = subprocess.run(s, stderr=f_stderr, stdout=f_stdout)
+            p = subprocess.run(s, stderr=f_stderr, stdout=f_stdout, env={**os.environ, **env})
             if p.returncode != 0:
                 status = "failed"
                 print(status)
