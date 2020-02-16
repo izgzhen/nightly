@@ -137,7 +137,7 @@ def process_running_jobs():
                 db.update_job_status(log_id, "failed", datetime.datetime.now())
                 continue
             output = json.loads(open(output_json, "r").read())
-            db.update_job_status(log_id, output["status"], datetime.date.fromtimestamp(output["finished_timestamp"]))
+            db.update_job_status(log_id, output["status"], datetime.datetime.fromtimestamp(output["finished_timestamp"]))
             os.system("rm " + output_json)
             # collect persisted
             for persisted_item in persisted:
