@@ -3,11 +3,12 @@ var saved_rows = {}
 function jobToggle(id) {
     var row = document.querySelector("#job-" + id);
     let idElem = row.querySelector(".job-id");
+    let nameElem = row.querySelector(".job-name");
     let statusElem = row.querySelector(".job-status");
     if (saved_rows[id] == undefined) {
         saved_rows[id] = row.cloneNode(true);
         row.querySelectorAll("td").forEach(elem => {
-            if (elem != idElem) {
+            if (elem != idElem && elem != nameElem) {
                 elem.innerHTML = "...";
                 if (elem != statusElem) {
                     elem.style.backgroundColor = "gray";

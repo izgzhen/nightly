@@ -22,7 +22,7 @@
         {% for log in logs %}
         <tr class="row" id="job-{{ log["log_id"] }}">
             <td class="job-id"><button onclick="jobToggle({{ log["log_id"] }});">{{ log["log_id"] }}</button></td>
-            <td>{{ log["job_name"] }}</td>
+            <td class="job-name">{{ log["job_name"] }}</td>
             <td>
                 {% if 'cwd' in log and log['cwd'] %}
                 <p>cwd: {{ log['cwd'] }}</p>
