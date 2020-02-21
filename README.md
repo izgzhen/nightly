@@ -54,7 +54,7 @@ python src/main.py --truncate-all-log
 Run the master daemon for scheduling jobs (on a server within tmux):
 
 ```
-python src/main.py
+make run # it will tee the log to main.log as well
 ```
 
 Run web panel daemon:
