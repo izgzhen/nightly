@@ -30,6 +30,9 @@ if len(sys.argv) > 1:
     if first_arg == "--upgrade-db":
         db.upgrade()
         sys.exit(0)
+    elif first_arg == "--truncate-all-log":
+        db.truncate_all_log()
+        sys.exit(0)
 
 def get_storage(type_: str):
     for s in resources_config["storage"]:

@@ -6,6 +6,7 @@ import json
 import time
 
 from msbase.logging import logger
+from msbase.utils import datetime_str
 
 resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
 
@@ -26,6 +27,24 @@ class DB(object):
     def __init__(self):
         print("Connecting DB")
         self.db_ = pymysql.connect(**resources_config["logdb"])
+
+    def truncate_all_log(self):
+        backup_path = resources_config["master"]["logdb_backup_path"]
+        assert os.path.isdir(backup_path)
+        backup_file = backup_path + "/nightly-" + datetime_str() + ".sql"
+        config = resources_config["logdb"]
+        ssl_ca = config["ssl"]["ca"]
+        host = config["host"]
+        port = config["port"]
+        user = config["user"]
+        passwd = config["passwd"]
+        db = config["db"]
+        # FIXME: why isn't ssl-cert useful?
+        cmd = f"mysqldump -h {host} -u {user} -p{passwd} -P {port} {db} > {backup_file}"
+        print(cmd)
+        os.system(cmd)
+
+        self.exec("TRUNCATE TABLE log")
 
     def db(self):
         try:

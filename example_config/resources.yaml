@@ -1,6 +1,7 @@
 # Resource definitions
 master: # master node which runs panel and scheduler 
     host: foo@bar.com
+    logdb_backup_path: /data/backups # directory where the log db table is backed up when truncating all logs
 
 logdb: # Database to store
     host: mysql.example.com
