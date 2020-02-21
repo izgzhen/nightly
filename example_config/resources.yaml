@@ -1,0 +1,22 @@
+# Resource definitions
+master: # master node which runs panel and scheduler 
+    host: foo@bar.com
+
+logdb: # Database to store
+    host: mysql.example.com
+    port: 3306
+    user: mysql-user
+    passwd: mysql-passwd
+    db: mysql-db
+    ssl:
+        ca: config/ca-certificate.crt # the relative path to certificate
+
+storage: # a list of storage nodes
+    - type: linux-fs # type composed of OS name etc., used by job definition to select a node
+      host: foo@bar.com # host name
+      where: /data/nightly # where the job data is persisted
+
+compute: # a list of compute nodes
+    - type: ubuntu-1804-x86_64
+      host: foo@bar.com
+      nightly_tmp: /tmp/nightly # temporary directory for holding nightly tool related file

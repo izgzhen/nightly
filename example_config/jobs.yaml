@@ -1,0 +1,32 @@
+- name: example-job-1 # unique id to identify the same type of job
+  steps: # a list of commands
+    - ["rm", "-rf", "dot_files"]
+    - ["mkdir", "-r", "dot_files"]
+    - ["wget", "google.com", "-O", "dot_files/google.html"]
+  persisted: # the folder to be persisted in storage
+    - dot_files
+  schedule: nightly # launch new job now if `now > last_run(name).started + 1 day`
+  storage_type: linux-fs
+  compute_type: ubuntu-1804-x86_64 # compute node type
+  cwd: /tmp/nightly # (optional, default to compute node's `nightly_tmp`): where commands in `steps` are run
+  enabled: false
+- name: test-prod
+  host: foo@bar.com # compute node host (optional, default to any `host` in `resources` that has the required `compute_type`)
+  steps:
+    - ["ping", "-c", "3", "google.com"]
+    - ["sleep", "10800"]
+  schedule: daemon # launch new job now if all previous same type run has finished or failed
+  storage_type: linux-fs
+  persisted: []
+  enabled: true # whether this job will be launched if other conditions are satified
+- name: example-job-2
+  host: foo@bar.com
+  cwd: /home/foo/project
+  env: # environment variables
+    SILENT: "1"
+  steps:
+    - ["python", "run.py"]
+  schedule: nightly
+  persisted: []
+  storage_type: linux-fs
+  enabled: true
