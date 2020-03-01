@@ -41,13 +41,13 @@ Users can use different `config` folders in different environment (production or
 Initialize or update database:
 
 ```
-python src/main.py --upgrade-db
+make upgrade-db
 ```
 
 Truncate and backup log table:
 
 ```
-python src/main.py --truncate-all-log
+make truncate-all-log
 ```
 
 Run the master daemon for scheduling jobs (on a server within tmux):

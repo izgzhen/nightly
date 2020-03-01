@@ -5,7 +5,11 @@
     - ["wget", "google.com", "-O", "dot_files/google.html"]
   persisted: # the folder to be persisted in storage
     - dot_files
-  schedule: nightly # launch new job now if `now > last_run(name).started + 1 day`
+
+  # launch new job now if `now > last_run(name).started + 1 day`
+  # Other available schedule options: once, daemon
+  schedule: nightly
+
   storage_type: linux-fs
   compute_type: ubuntu-1804-x86_64 # compute node type
   cwd: /tmp/nightly # (optional, default to compute node's `nightly_tmp`): where commands in `steps` are run
