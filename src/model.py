@@ -6,9 +6,11 @@ import json
 import time
 
 from msbase.logging import logger
-from msbase.utils import datetime_str
+from msbase.utils import datetime_str, getenv
+from path import Path
 
-resources_config = yaml.safe_load(open("config/resources.yaml", "r"))
+resources_config = yaml.safe_load(open(getenv("CONFIG_RESOURCES"), "r"))
+config_dir = os.path.dirname(getenv("CONFIG_RESOURCES"))
 
 def prepare_insert_query(row_dict, table):
     row_items = list(row_dict.items())
@@ -26,7 +28,8 @@ def decode_entry(entry):
 class DB(object):
     def __init__(self):
         print("Connecting DB")
-        self.db_ = pymysql.connect(**resources_config["logdb"])
+        with Path(config_dir):
+            self.db_ = pymysql.connect(**resources_config["logdb"])
 
     def truncate_all_log(self):
         backup_path = resources_config["master"]["logdb_backup_path"]
@@ -105,7 +108,7 @@ class DB(object):
             cur.close()
         else:
             max_version = ret_all[0][0]
-        for f in sorted(glob.glob("schema/*.sql")):
+        for f in sorted(glob.glob(getenv("SCHEMA_DIR") + "/*.sql")):
             current_version = os.path.basename(f).split("-")[0]
             if current_version > max_version:
                 cur = self.db().cursor()
