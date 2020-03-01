@@ -1,6 +1,8 @@
 Nightly
 =======
 
+![CI](https://github.com/izgzhen/nightly/workflows/CI/badge.svg)
+
 ## Introduction
 
 Nightly is a system for scheduling, monitoring and collecting outputs from configuration-defined
