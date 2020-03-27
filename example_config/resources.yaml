@@ -2,6 +2,9 @@
 master: # master node which runs panel and scheduler
     host: foo@bar.com
     logdb_backup_path: /data/backups # directory where the log db table is backed up when truncating all logs
+    sendgrid_api_key: SG.XXXXYYYY
+    notif_sender_email: from@example.com
+    notif_receiver_email: to@example.com
 
 logdb: # Database to store
     host: mysql.example.com

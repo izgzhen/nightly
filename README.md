@@ -76,3 +76,7 @@ Homepage:
 Output page:
 
 ![](output.png)
+
+## Email notification
+
+https://app.sendgrid.com/guide/integrate/langs/python

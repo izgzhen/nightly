@@ -3,3 +3,4 @@ config
 __pycache__
 main.log
 .mypy_cache/
+sendgrid.env
