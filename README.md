@@ -23,12 +23,14 @@ Components:
 - Runner: launch job on runner node through SSH
 - Storage: persisting job output and selected files
 - Panel: web panel daemon
+- Notif: notification (only email for now)
 
 ## Dependencies
 
 ```
 poetry shell # get poetry: https://python-poetry.org/
 poetry install
+# symblink the virtual env created by poetry to `.venv` under project root as well
 ```
 
 ## Config
@@ -67,6 +69,12 @@ export BASIC_AUTH_USERNAME=...; export BASIC_AUTH_PASSWORD=...; make panel-prod
 
 Currently, panel server and master daemon must be on the same node.
 
+Launch an ad-hoc job from command line:
+
+```bash
+scripts/launch-nightly sleep 10
+```
+
 ## Demo
 
 Homepage:
@@ -77,6 +85,6 @@ Output page:
 
 ![](output.png)
 
-## Email notification
+## Email notification integration
 
 https://app.sendgrid.com/guide/integrate/langs/python
