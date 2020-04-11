@@ -52,12 +52,13 @@ class DB(object):
         self.exec("TRUNCATE TABLE log")
 
     def db(self):
-        try:
-            self.db_.ping(reconnect=False)
-        except Exception as e:
-            print(e)
-            print("Connecting DB")
-            self.db_ = pymysql.connect(**resources_config["logdb"])
+        while True:
+            try:
+                self.db_.ping(reconnect=True)
+                break
+            except Exception as e:
+                print("Exception when ping DB server, waiting to reconnect...")
+                time.sleep(3)
         return self.db_
 
     def exec(self, query, args=()):
