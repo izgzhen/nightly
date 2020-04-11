@@ -4,6 +4,7 @@ NIGHTLY_PROJ_ROOT := $(shell dirname $(mkfile_path))
 export CONFIG_JOBS = $(NIGHTLY_PROJ_ROOT)/config/jobs.yaml
 export CONFIG_RESOURCES = $(NIGHTLY_PROJ_ROOT)/config/resources.yaml
 export SCHEMA_DIR = $(NIGHTLY_PROJ_ROOT)/schema
+export TEMPLATES_DIR = $(NIGHTLY_PROJ_ROOT)/src/templates
 
 all:
 	@echo "run, panel"

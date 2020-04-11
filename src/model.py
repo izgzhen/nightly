@@ -10,6 +10,7 @@ from msbase.utils import datetime_str, getenv
 from path import Path
 
 from notif import send_text
+from common import render_job_html
 
 resources_config = yaml.safe_load(open(getenv("CONFIG_RESOURCES"), "r"))
 config_dir = os.path.dirname(getenv("CONFIG_RESOURCES"))
@@ -155,7 +156,7 @@ class DB(object):
     def update_job_status(self, job_id, status, finished):
         self.exec("UPDATE log SET job_status = %s, job_finished = %s WHERE log_id = %s", (status, finished, job_id))
         job = self.fetch_log_by_id(job_id)
-        text = "Update job %s to %s at %s:\n%s" % (job_id, status, finished, job)
+        text = "<p>Update job %s to %s at %s</p>\n%s" % (job_id, status, finished, render_job_html(job))
         send_text(text)
 
     def commit(self):

@@ -1,0 +1,27 @@
+<tr class="row" id="job-{{ log["log_id"] }}">
+    <td class="job-id"><button onclick="jobToggle({{ log["log_id"] }});">{{ log["log_id"] }}</button></td>
+    <td class="job-name">{{ log["job_name"] }}</td>
+    <td>
+        {% if 'cwd' in log and log['cwd'] %}
+        <p>cwd: {{ log['cwd'] }}</p>
+        {% endif %}
+        {% for step in log["job_steps"] %}
+        <ul>
+            <code>{{ step }} </code>
+        </ul>
+        {% endfor %}
+    </td>
+    <td>
+        {% for step in log["job_persisted"] %}
+        <ul>
+            <code>{{ step }} </code>
+        </ul>
+        {% endfor %}
+    </td>
+    <td>{{ log["job_started"] }} (PID: {{ log["pid"] }}) </td>
+    <td>{{ log["job_finished"] }}</td>
+    <td class="job-status" style="background-color: {{ log["job_status_color"] }}">{{ log["job_status"] }}</td>
+    <td><code>{{ log["storage"] }}</code></td>
+    <td><code>{{ log["compute"] }}</code></td>
+    <td><a href="/output/{{ log['log_id'] }}">Output</a></td>
+</tr>
