@@ -40,6 +40,9 @@ See `example_config` for examples and comments.
 
 Users can use different `config` folders in different environment (production or development).
 
+See https://app.sendgrid.com/guide/integrate/langs/python for email notification configuration keys
+`sendgrid_api_key`, `notif_sender_email` and `notif_receiver_email`.
+
 ## Runbook
 
 Initialize or update database:
@@ -85,6 +88,6 @@ Output page:
 
 ![](output.png)
 
-## Email notification integration
+Email notification:
 
-https://app.sendgrid.com/guide/integrate/langs/python
+![](email-notif.png)
