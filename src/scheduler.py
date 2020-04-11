@@ -33,13 +33,14 @@ def process_running_jobs():
         persisted = job["job_persisted"]
         log_id = str(job["log_id"])
         ret = resource.ssh_exec_on_node("ps -p %s" % job["pid"], resource.compute)
-        if str(job["pid"]) not in ret:
+        if job["pid"] is not None and str(job["pid"]) not in ret:
+            logger.info("Non-existent job PID: %s" % job["pid"])
             # collect output
             output_json = log_id + "-output.json"
             runner_dir = resource.compute["nightly_tmp"]
             resource.scp_from(runner_dir + "/" + output_json, ".", node=resource.compute)
             if not os.path.exists(output_json):
-                print(f"Job #{log_id} failed: not existing {output_json}")
+                logger.error(f"Job #{log_id} failed: not existing {output_json}")
                 db.update_job_status(log_id, "failed", datetime.datetime.now())
                 continue
             output = json.loads(open(output_json, "r").read())
@@ -56,6 +57,8 @@ def process_running_jobs():
 
             resource.persist(log_id, runner_dir + "/" + output_json, "output.json")
             logger.info("Finished #%s" % log_id)
+        elif job["pid"] is None:
+            logger.info("Still initializing #%s" % log_id)
         else:
             logger.info("Still running #%s" % log_id)
 

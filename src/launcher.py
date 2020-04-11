@@ -5,6 +5,7 @@ import yaml
 import json
 import datetime
 import tempfile
+import time
 import sys
 import os
 
@@ -85,11 +86,12 @@ class Launcher(object):
         resource.scp_to(task_file.name, runner_dir + "/%s-input.json" % job_id, resource.compute)
         resource.scp_to("src/runner.py", runner_dir + "/runner.py", resource.compute)
         resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py %s > /dev/null 2>&1 &" % job_id, resource.compute)
-        pid = int(resource.ssh_exec_on_node("sleep 1; cat " + runner_dir + "/run.pid", resource.compute).strip())
+        pid = int(resource.ssh_exec_on_node("sleep 1; cat " + runner_dir + "/" + str(job_id) + "-pid.txt", resource.compute).strip())
         self.db.update_pid(job_id, pid)
 
         # launch job and store the running PID
         logger.info("Launched job (job_id: %s, PID: %s): %s" % (job_id, pid, job["name"]))
+        time.sleep(1)
 
     def process_job_to_launch(self, job):
         """
