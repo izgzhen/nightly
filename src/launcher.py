@@ -12,9 +12,10 @@ import os
 from msbase.utils import getenv, datetime_str
 from msbase.logging import logger
 
+from common import get_jobs_config
 from model import DB
 from resource import Resource
-
+from notif import send_text
 
 def schedule_to_interval(sched):
     if sched == "nightly":
@@ -86,7 +87,14 @@ class Launcher(object):
         resource.scp_to(task_file.name, runner_dir + "/%s-input.json" % job_id, resource.compute)
         resource.scp_to("src/runner.py", runner_dir + "/runner.py", resource.compute)
         resource.ssh_exec_on_node("cd " + runner_dir + "; nohup python3 runner.py %s > /dev/null 2>&1 &" % job_id, resource.compute)
-        pid = int(resource.ssh_exec_on_node("sleep 1; cat " + runner_dir + "/" + str(job_id) + "-pid.txt", resource.compute).strip())
+        try:
+            pid = int(resource.ssh_exec_on_node("sleep 3; cat " + runner_dir + "/" + str(job_id) + "-pid.txt", resource.compute).strip())
+        except Exception:
+            import pdb, traceback
+            extype, value, tb = sys.exc_info()
+            traceback.print_exc()
+            send_text("Exception -- in PDB now")
+            pdb.post_mortem(tb)
         self.db.update_pid(job_id, pid)
 
         # launch job and store the running PID
@@ -97,6 +105,15 @@ class Launcher(object):
         """
         Process job for further scheduling needs
         """
+        job_name = job["name"]
+        assert "enabled" in job, job
+        if not job["enabled"]:
+            logger.info(f"Job {job_name} is not enabled, thus skipped")
+            return
+        if "cwd" not in job:
+            job["cwd"] = None
+        if "env" not in job:
+            job["env"] = {}
         if job["schedule"] in ["nightly"]:
             # Check if we need to wait until an internal after the last run of the same job finished
             last_run = self.db.get_last_run_started(job)
@@ -110,6 +127,8 @@ class Launcher(object):
             if len(jobs) > 0:
                 assert len(jobs) == 1
                 return None
+        elif job["schedule"] == "once":
+            pass
         else:
             raise Exception("Unknown schedule: " + job["schedule"])
 
@@ -123,13 +142,20 @@ class Launcher(object):
             compute = self.get_compute(job["compute_type"])
 
         if compute is None:
-            print("missing host for " + str(job))
+            logger.warn("Can't find compute resource for " + str(job))
             return None
 
         self.launch_job(job, compute, storage)
+        self.db.commit()
 
 if __name__ == "__main__":
     launcher = Launcher()
+    if sys.argv[1] == "--job":
+        job_name = sys.argv[2]
+        job = get_jobs_config()[job_name]
+        print(f"Launch job {job_name}: {job}")
+        launcher.process_job_to_launch(job)
+        exit(0)
     cwd = getenv("NIGHTLY_LAUNCH_CWD")
     step = sys.argv[1:]
     name = "adhoc-" + datetime_str()

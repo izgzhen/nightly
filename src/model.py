@@ -142,7 +142,7 @@ class DB(object):
     def insert_row_get_id(self, row_dict, table):
         cur = self.db().cursor()
         query, values = prepare_insert_query(row_dict, table)
-        logger.info(query)
+        logger.info(query % values)
         cur.execute(query, values)
         cur.execute("SELECT LAST_INSERT_ID()")
         ret = cur.fetchone()[0]

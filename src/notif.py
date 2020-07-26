@@ -15,11 +15,7 @@ def send_text(s: str):
         to_emails=master_resource["notif_receiver_email"],
         subject='Notification from Nightly Service',
         html_content=s)
-    try:
-        sg = SendGridAPIClient(master_resource["sendgrid_api_key"])
-        response = sg.send(message)
-        print(response.status_code)
-        print(response.body)
-        print(response.headers)
-    except Exception as e:
-        print(e)
+    sg = SendGridAPIClient(master_resource["sendgrid_api_key"])
+    response = sg.send(message)
+    ok = response.status_code >= 200 and response.status_code < 300
+    assert ok, response.body

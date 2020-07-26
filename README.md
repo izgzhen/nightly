@@ -11,6 +11,16 @@ solution that is lightweight (depends on nothing more than python, mysql and ssh
 customizable (written in less than a few hundreds lines of Python in total). 
 I hope it might be useful to you as well.
 
+**Features**:
+
+- Define compute/storage resources declaratively
+- Define job declaratively (similar to CI)
+- Run job periodically, or as a daemon, or just once
+    - For "just once", you can also run an ad-hoc command line job without defining it
+- Automatically transfer job log and output to storage
+- Monitor the progress via web panel
+- Receive notification in job success/fail/...
+
 Data objects:
 
 - Job
@@ -19,7 +29,7 @@ Data objects:
 Components:
 
 - Log DB: database containing job log (status) entries
-- Scheduler: master node
+- Scheduler: master node, launch jobs and monitor process status
 - Runner: launch job on runner node through SSH
 - Storage: persisting job output and selected files
 - Panel: web panel daemon
@@ -75,7 +85,8 @@ Currently, panel server and master daemon must be on the same node.
 Launch an ad-hoc job from command line:
 
 ```bash
-scripts/launch-nightly sleep 10
+scripts/launch-nightly sleep 10 # launch an ad-hoc one on the master node
+scripts/launch-nightly --job ... # launch a defined job. Note that it must has "once" schedule
 ```
 
 ## Demo

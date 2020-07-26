@@ -24,3 +24,12 @@ compute: # a list of compute nodes
     - type: ubuntu-1804-x86_64
       host: foo@bar.com
       nightly_tmp: /tmp/nightly # temporary directory for holding nightly tool related file
+    - type: centos
+      host: baz@bar.com
+      nightly_tmp: /tmp/nightly
+      # https://github.com/msoap/shell2http
+      # SH_BASIC_AUTH=baz:baz shell2http /ps "ps aux"
+      shell2http:
+        endpoint: http://baz.bar.com:8080
+        user: baz
+        password: baz

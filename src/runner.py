@@ -26,7 +26,11 @@ for si, s in enumerate(task["steps"]):
     stderr_output_path = "%s/%s-%s-stderr.txt" % (nightly_cwd, task_id, si)
     with open(stdout_output_path, "w") as f_stdout:
         with open(stderr_output_path, "w") as f_stderr:
-            p = subprocess.run(s, stderr=f_stderr, stdout=f_stdout, env={**os.environ, **env})
+            run_kwargs = {}
+            if task["cwd"]:
+                run_kwargs["cwd"] = task["cwd"]
+            print("run_kwargs: %s" % run_kwargs)
+            p = subprocess.run(s, stderr=f_stderr, stdout=f_stdout, env={**os.environ, **env}, **run_kwargs)
             if p.returncode != 0:
                 status = "failed"
                 msg = "step %s: returncode is %s" % (s, p.returncode)
