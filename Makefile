@@ -26,8 +26,5 @@ panel-prod: check
 upgrade-db: check
 	python src/main.py --upgrade-db
 
-upgrade-db: check
-	python src/main.py --upgrade-db
-
 truncate-all-log: check
 	python src/main.py --truncate-all-log

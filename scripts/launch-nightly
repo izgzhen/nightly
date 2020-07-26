@@ -6,5 +6,6 @@ PROJ_DIR=$(realpath $SCRIPT_DIR/..)
 export NIGHTLY_LAUNCH_CWD=$(pwd)
 
 cd $PROJ_DIR
+export CONFIG_JOBS=$PROJ_DIR/config/jobs.yaml
 export CONFIG_RESOURCES=$PROJ_DIR/config/resources.yaml
 .venv/bin/python src/launcher.py "${@:1}"
