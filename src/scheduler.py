@@ -87,8 +87,9 @@ try:
         time.sleep(30)
 except Exception as e:
     error_msg_html = """
-    <h2>Schedule is crashed by exception</h2>
+    <h2>Scheduler is crashed by exception</h2>
     <pre>%s</pre>
+    <p>Check tmux for more details</p>
     """ % e
     send_text(error_msg_html)
     raise e
